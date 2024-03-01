@@ -1,0 +1,263 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
+        "C_Cpp.default.compileCommands": "builddir\\compile_commands.json",
+        "C_Cpp.formatting": "clangFormat",
+        "C_Cpp.intelliSenseEngine": "disabled",
+        "clangd.onConfigChanged": "restart",
+        "clangd.arguments": [
+            "--compile-commands-dir=builddir",
+            "--function-arg-placeholders=1",
+            "--clang-tidy",
+            "--all-scopes-completion",
+            "--enable-config",
+        ],
+        "files.associations": {
+            "*.s": "arm"
+        },
+        "mesonbuild.configureOptions": [
+            "--cross-file",
+            "cross_files/toolchain.ini",
+            "--cross-file",
+            "cross_files/stm32f10x.ini",
+            "--cross-file",
+            "cross_files/debugger/@debugger_file_ini@",
+            "--cross-file",
+            "@cross_file@"
+        ]
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "meson - build",
+                "type": "meson",
+                "mode": "build",
+                "group": {
+                    "kind": "build",
+                    "isDefault": true
+                },
+                "problemMatcher": {
+                    "base": "$gcc",
+                    "fileLocation": [
+                        "relative",
+                        "${workspaceFolder}/builddir"
+                    ]
+                },
+                "presentation": {
+                    "focus": true,
+                    "clear": true
+                },
+                "target": "dbg_size:run"
+            },
+            {
+                "label": "meson - clean",
+                "type": "meson",
+                "mode": "clean",
+                "isBackground": true,
+                "presentation": {
+                    "clear": true,
+                    "close": true,
+                    "reveal": "silent",
+                    "panel": "shared"
+                },
+                "group": {
+                    "kind": "test",
+                    "isDefault": true
+                }
+            },
+            {
+                "label": "launch openocd",
+                "type": "shell",
+                "command": "openocd",
+                "args": [
+                    "-f",
+                    "openocd_cfg/@debugger_file@",
+                    "-f",
+                    "openocd_cfg/stm32f1x.cfg"
+                ],
+                "isBackground": true,
+                "runOptions": {
+                    "instanceLimit": 1
+                },
+                "presentation": {
+                    "echo": false,
+                    "reveal": "silent",
+                    "focus": false,
+                    "panel": "dedicated",
+                    "revealProblems": "onProblem",
+                    "close": true
+                },
+                "problemMatcher": []
+            }
+        ]
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "openocd - ram",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceFolder}/builddir/@debug_file@",
+                "cwd": "${workspaceFolder}/builddir",
+                "environment": [],
+                "externalConsole": false,
+                "MIMode": "gdb",
+                "miDebuggerPath": "@gdb_path@",
+                "miDebuggerServerAddress": "127.0.0.1:3333",
+                "svdPath": "${workspaceFolder}/proj_files/STM32F103xx.svd",
+                "hardwareBreakpoints": {
+                    "limit": 6,
+                    "require": false
+                },
+                "targetArchitecture": "arm",
+                "launchCompleteCommand": "None",
+                "unknownBreakpointHandling": "stop",
+                "useExtendedRemote": true,
+                "stopAtEntry": false,
+                "preLaunchTask": "launch openocd",
+                "setupCommands": [
+                    {
+                        "description": "为 gdb 启用整齐打印",
+                        "text": "-enable-pretty-printing",
+                        "ignoreFailures": true
+                    },
+                    {
+                        "text": "set output-radix 16",
+                        "description": "设置默认十六进制显示所有的数据"
+                    }
+                ],
+                "postRemoteConnectCommands": [
+                    // {
+                    //     "text": "monitor adapter srst pulse_width 20",
+                    //     "description": "复位芯片(硬复位)"
+                    // },
+                    {
+                        "text": "monitor init",
+                        "description": "初始化"
+                    },
+                    {
+                        "text": "monitor reset",
+                        "description": "复位芯片"
+                    },
+                    {
+                        "text": "monitor mww 0xE000ED0C 0x5FA0004",
+                        "description": "软复位"
+                    },
+                    {
+                        "text": "monitor halt",
+                        "description": "暂停运行"
+                    },
+                    {
+                        "text": "monitor init",
+                        "description": "初始化"
+                    },
+                    // {
+                    //     "text": "monitor adapter speed 40000",
+                    //     "description": "提高JTAG速度",
+                    //     "ignoreFailures": true
+                    // },
+                    {
+                        "text": "load",
+                        "description": "加载到目标芯片"
+                    },
+                    {
+                        "text": "tb main",
+                        "description": "在main处停止",
+                        "ignoreFailures": true
+                    }
+                ]
+            },
+            {
+                "name": "openocd - flash",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": "${workspaceFolder}/builddir/@debug_file@",
+                "cwd": "${workspaceFolder}/builddir",
+                "environment": [],
+                "externalConsole": false,
+                "MIMode": "gdb",
+                "miDebuggerPath": "@gdb_path@",
+                "miDebuggerServerAddress": "127.0.0.1:3333",
+                "svdPath": "${workspaceFolder}/proj_files/STM32F103xx.svd",
+                "hardwareBreakpoints": {
+                    "limit": 6,
+                    "require": true
+                },
+                "targetArchitecture": "arm",
+                "launchCompleteCommand": "exec-continue",
+                "unknownBreakpointHandling": "stop",
+                "useExtendedRemote": true,
+                "preLaunchTask": "launch openocd",
+                "setupCommands": [
+                    {
+                        "description": "为 gdb 启用整齐打印",
+                        "text": "-enable-pretty-printing",
+                        "ignoreFailures": true
+                    },
+                    {
+                        "text": "set output-radix 16",
+                        "description": "设置默认十六进制显示所有的数据"
+                    }
+                ],
+                "postRemoteConnectCommands": [
+                    {
+                        "text": "monitor adapter srst pulse_width 20",
+                        "description": "复位芯片"
+                    },
+                    {
+                        "text": "monitor init",
+                        "description": "初始化"
+                    },
+                    {
+                        "text": "monitor adapter speed 80000",
+                        "description": "提高JTAG速度",
+                        "ignoreFailures": true
+                    },
+                    // {
+                    //     "text": "load",
+                    //     "description": "加载到目标芯片"
+                    // },
+                    {
+                        "text": "tb main",
+                        "description": "在main处停止",
+                        "ignoreFailures": true
+                    },
+                    {
+                        "text": "b HardFault_Handler",
+                        "description": "进入内核异常时停止"
+                    },
+                    // {
+                    //     "text": "c",
+                    //     "ignoreFailures": true,
+                    //     "description": "开始执行"
+                    // }
+                ]
+            },
+            {
+                "name": "arm - debugger",
+                "type": "embedded-debug",
+                "request": "launch",
+                "program": "${workspaceFolder}/builddir/@debug_file@",
+                "cmsisPack": "@dfp_file@",
+                "deviceName": "@device_name@"
+            }
+        ],
+        "compounds": []
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-vscode.cpptools",
+            "ms-vscode.vscode-embedded-tools",
+            "mesonbuild.mesonbuild",
+            "Arm.device-manager",
+            "Arm.embedded-debug",
+        ]
+    }
+}
